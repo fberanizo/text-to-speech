@@ -1,0 +1,113 @@
+<script type="text/x-red" data-template-name="text-to-speech">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-credentials"><i class="fa fa-cube"></i> <span>Credentials</span></label>
+        <input type="file" id="node-input-credentials">
+    </div>
+    <div class="form-row">
+        <label for="node-input-text"><i class="fa fa-quote-left"></i> <span>Text to synthesize</span></label>
+        <input type="text" id="node-input-text" placeholder="payload" style="width:250px;">
+        <input type="hidden" id="node-input-textType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-voiceName"><i class="fa fa-tasks"></i> Voice name</label>
+        <select type="text" id="node-input-voiceName" style="width:70%;">
+            <option value="en-US-Wavenet-A">English (US) - MALE</option>
+            <option value="en-US-Wavenet-C">English (US) - FEMALE</option>
+            <option value="pt-BR-Standard-A">Portuguese (Brazil) - FEMALE</option>
+            <option value="es-ES-Standard-A">Spanish - FEMALE</option>
+            <option value="it-IT-Standard-A">Italian - FEMALE</option>
+            <option value="fr-FR-Standard-C">French - FEMALE</option>
+            <option value="de-DE-Standard-A">German - FEMALE</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-audioEncoding"><i class="fa fa-tasks"></i> Audio format</label>
+        <select type="text" id="node-input-audioEncoding" style="width:70%;">
+            <option value="LINEAR16">WAV Linear PCM</option>
+            <option value="MP3">MP3</option>
+            <option value="OGG_OPUS">Ogg Opus</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-response"><i class="fa fa-edit"></i> <span>Response to</span></label>
+        <input type="text" id="node-input-response" placeholder="payload" style="width:250px;">
+        <input type="hidden" id="node-input-responseType">
+    </div>
+    <div style="display: none;">
+        <input type="hidden" id="node-input-_credentials_client_email">
+        <input type="hidden" id="node-input-_credentials_private_key">
+        <input type="hidden" id="node-input-_credentials_project_id">
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("text-to-speech", {
+        category: "google",
+        defaults: {
+            name: { value: "", required: false },
+            credentials: { value: "" },
+            text: { value: "payload", validate: RED.validators.typedInput("textType") },
+            textType: { value: "msg" },
+            voiceName: { value: "pt-BR-Standard-A" },
+            audioEncoding: { value: "LINEAR16" },
+            response: { value: "payload" },
+            responseType: { value: "msg" },
+
+            //
+            _credentials_client_email: { value: "" },
+            _credentials_private_key: { value: "" },
+            _credentials_project_id: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        align: "left",
+        icon: "bridge.png",
+        color: "#2B85E7",
+        label: function () {
+            return this.name || "text-to-speech";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            $("#node-input-text").typedInput({
+                default: "msg",
+                types: ["msg", "str"],
+                typeField: $("#node-input-textType")
+            });
+
+            $("#node-input-response").typedInput({
+                default: "msg",
+                types: ["msg", "str"],
+                typeField: $("#node-input-responseType")
+            });
+        },
+        oneditsave: function () {
+            if (typeof window.FileReader !== "function") {
+                console.error("The file API isn't supported on this browser yet.");
+                return;
+            }
+
+            var files = $("#node-input-credentials").prop("files");
+
+            if (files && files[0]) {
+                var file = files[0];
+                fr = new FileReader();
+                fr.onload = () => {
+                    var credentialsData = JSON.parse(fr.result);
+                    $("#node-input-_credentials_client_email").val(credentialsData.client_email);
+                    this._credentials_client_email = credentialsData.client_email;
+                    $("#node-input-_credentials_private_key").val(credentialsData.private_key);
+                    this._credentials_private_key = credentialsData.private_key;
+                    $("#node-input-_credentials_project_id").val(credentialsData.project_id);
+                    this._credentials_project_id = credentialsData.project_id;
+                }
+                fr.readAsText(file);
+            }
+        }
+    });
+</script>
