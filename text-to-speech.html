@@ -33,14 +33,19 @@
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-response"><i class="fa fa-edit"></i> <span>Response to</span></label>
-        <input type="text" id="node-input-response" placeholder="payload" style="width:250px;">
-        <input type="hidden" id="node-input-responseType">
+        <label for="node-input-device"><i class="fa fa-wifi"></i> Device</label>
+        <select id="node-input-device" style=""></select>
     </div>
     <div style="display: none;">
         <input type="hidden" id="node-input-_credentials_client_email">
         <input type="hidden" id="node-input-_credentials_private_key">
         <input type="hidden" id="node-input-_credentials_project_id">
+    </div>
+    <div style="display: none;">
+        <input type="hidden" id="node-input-_device_id">
+        <input type="hidden" id="node-input-_device_label">
+        <input type="hidden" id="node-input-_device_type">
+        <input type="hidden" id="node-input-_device_templates">
     </div>
 </script>
 
@@ -54,8 +59,13 @@
             textType: { value: "msg" },
             voiceName: { value: "pt-BR-Standard-A" },
             audioEncoding: { value: "LINEAR16" },
-            response: { value: "payload" },
-            responseType: { value: "msg" },
+            device: { value: undefined, required: true },
+
+            //
+            _device_id: { value: "", required: false },
+            _device_label: { value: "", required: false },
+            _device_type: { value: "", required: false },
+            _device_templates: { value: [], required: false },
 
             //
             _credentials_client_email: { value: "" },
@@ -63,8 +73,8 @@
             _credentials_project_id: { value: "" }
         },
         inputs: 1,
-        outputs: 1,
-        align: "left",
+        outputs: 0,
+        align: "right",
         icon: "bridge.png",
         color: "#2B85E7",
         label: function () {
@@ -80,11 +90,32 @@
                 typeField: $("#node-input-textType")
             });
 
-            $("#node-input-response").typedInput({
-                default: "msg",
-                types: ["msg", "str"],
-                typeField: $("#node-input-responseType")
-            });
+            var select = document.getElementById("node-input-device");
+            let node = this;
+
+            // this will only work from the device management interface
+            function list_all(page) {
+                extra = `?page_num=${page}`
+                if (page === undefined) {
+                    extra = "";
+                }
+
+                util.GET(`/device${extra}`).then((list) => {
+                    list.devices.map((dev) => {
+                        select.options[select.options.length] = new Option(dev.label, JSON.stringify({ "id": dev.id }));
+                    });
+                    if (list.pagination.has_next) {
+                        list_all(list.pagination.next_page);
+                    } else {
+                        select.value = node.device;
+                    }
+                }).catch((error) => {
+                    console.error("Failed to retrieve the list of available devices", error);
+                });
+
+            }
+
+            list_all();
         },
         oneditsave: function () {
             if (typeof window.FileReader !== "function") {
@@ -107,6 +138,14 @@
                     this._credentials_project_id = credentialsData.project_id;
                 }
                 fr.readAsText(file);
+            }
+
+            if ($("#node-input-device").val()) {
+                const deviceData = JSON.parse($("#node-input-device").val());
+                $("#node-input-_device_id").val(deviceData.id);
+                $("#node-input-_device_templates").val(deviceData.templates);
+                this._device_id = deviceData.id
+                this._device_templates = deviceData.templates;
             }
         }
     });

@@ -2,12 +2,14 @@
 
 const path = require("path");
 const textToSpeech = require("@google-cloud/text-to-speech");
+var Publisher = require("./publisher");
 const dojot = require("@dojot/flow-node");
 
 
 class DataHandler extends dojot.DataHandlerBase {
     constructor() {
         super();
+        this.publisher = new Publisher("dojot.device-manager.device");
     }
 
     /**
@@ -91,7 +93,22 @@ class DataHandler extends dojot.DataHandlerBase {
             // Performs the Text-to-Speech request
             client.synthesizeSpeech(request).then(responses => {
                 let result = responses[0].queryResult;
-                this._set(config.response, result, message);
+                let output = {
+                    meta: {
+                        deviceid: config._device_id,
+                        service: tenant
+                    },
+                    metadata: {
+                        tenant: tenant
+                    },
+                    event: "configure",
+                    data: {
+                        attrs: result,
+                        id: config._device_id
+                    }
+                };
+                this.publisher.publish(output);
+                // this._set(config.response, result, message);
                 return callback(undefined, [message]);
             }).catch(err => {
                 return callback(err);

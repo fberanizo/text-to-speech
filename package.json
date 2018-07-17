@@ -10,6 +10,8 @@
   "license": "",
   "dependencies": {
     "@dojot/flow-node": "^1.0.2",
-    "@google-cloud/text-to-speech": "^0.3.0"
+    "@google-cloud/text-to-speech": "^0.3.0",
+    "axios": "^0.18.0",
+    "kafka-node": "^2.4.1"
   }
 }
