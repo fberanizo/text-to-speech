@@ -96,10 +96,10 @@ class DataHandler extends dojot.DataHandlerBase {
                 let output = {
                     meta: {
                         deviceid: config._device_id,
-                        service: tenant
+                        service: "admin"
                     },
                     metadata: {
-                        tenant: tenant
+                        tenant: "admin"
                     },
                     event: "configure",
                     data: {
@@ -108,7 +108,6 @@ class DataHandler extends dojot.DataHandlerBase {
                     }
                 };
                 this.publisher.publish(output);
-                // this._set(config.response, result, message);
                 return callback(undefined, [message]);
             }).catch(err => {
                 return callback(err);
